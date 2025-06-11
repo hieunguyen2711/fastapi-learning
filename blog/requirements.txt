@@ -1,3 +1,5 @@
+#A requirement text for all the used library.
+
 fastapi
 uvicorn
 sqlalchemy
