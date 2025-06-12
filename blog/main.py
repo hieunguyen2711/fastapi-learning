@@ -4,6 +4,8 @@ from . import schemas, models
 from .database import engine, SessionLocal
 from sqlalchemy.orm import Session
 from typing import List
+from .hashing import Hash
+
 
 app = FastAPI()
 
@@ -63,3 +65,14 @@ def fetch_one(id,response : Response, db: Session = Depends(get_db), status_code
     if not blog:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ID Not Found!")
     return blog
+
+
+
+@app.post('/user', status_code=status.HTTP_201_CREATED)
+def create_user(request: schemas.User, db: Session = Depends(get_db)):
+    
+    new_user = models.User(name=request.name, email=request.email, password=Hash.bcrypt(request.password))
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
