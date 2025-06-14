@@ -11,6 +11,14 @@ app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
 
+@app.get('/')
+def home():
+    return {"testing": "Hello"}
+
+"""
+    The code under is to perform the CRUD Operations for the Blogs.
+"""
+
 class Blog(BaseModel):
     title: str
     body: str
@@ -22,8 +30,8 @@ def get_db():
     finally:
         db.close()
 
- ####Create a POST Method to Insert into the DB ######
-@app.post("/blog", status_code=status.HTTP_201_CREATED)
+ ####Create a POST Method to Insert a blog into the DB ######
+@app.post("/blog", status_code=status.HTTP_201_CREATED, tags=['blogs'])
 def create(request: schemas.Blog, db: Session = Depends(get_db)):
     new_blog = models.Blog(title=request.title, body=request.body)
     db.add(new_blog)
@@ -32,7 +40,7 @@ def create(request: schemas.Blog, db: Session = Depends(get_db)):
     return new_blog
 
 ##### Delete a single Blog from the DB ######
-@app.delete('/blog/{id}', status_code=status.HTTP_204_NO_CONTENT)
+@app.delete('/blog/{id}', status_code=status.HTTP_204_NO_CONTENT,tags=['blogs'])
 def delete_single(id, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id)
     if not blog.first():
@@ -42,7 +50,7 @@ def delete_single(id, db: Session = Depends(get_db)):
     return 'Blog Deleted'
 
 ##### Update the information of one blog #####
-@app.put('/blog/{id}', status_code=status.HTTP_202_ACCEPTED)
+@app.put('/blog/{id}', status_code=status.HTTP_202_ACCEPTED, tags=['blogs'])
 def update(id, request: schemas.Blog, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id)
     if not blog.first():
@@ -52,14 +60,14 @@ def update(id, request: schemas.Blog, db: Session = Depends(get_db)):
     return "Successfully Updated"
 
 
-#### Create a GET Method to Fetch all from the DB ###### 
-@app.get("/blog", response_model=List[schemas.ShowBlog])
+#### Create a GET Method to Fetch all blogs from the DB ###### 
+@app.get("/blog", response_model=List[schemas.ShowBlog], tags=['blogs'])
 def get_all_blog(db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     return  blogs
 
-####Create a GET Method to Fetch one from the DB ######
-@app.get('/blog/{id}',status_code=200, response_model=schemas.ShowBlog)
+####Create a GET Method to Fetch one blog from the DB ######
+@app.get('/blog/{id}',status_code=200, response_model=schemas.ShowBlog, tags=['blogs'])
 def fetch_one(id,response : Response, db: Session = Depends(get_db), status_code=200):
     blog = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blog:
@@ -68,11 +76,23 @@ def fetch_one(id,response : Response, db: Session = Depends(get_db), status_code
 
 
 
-@app.post('/user', status_code=status.HTTP_201_CREATED)
+"""
+    The code under is to perform CRUD Operations for Users
+"""
+
+##### Create a POST method to create a new user.
+@app.post('/user', status_code=status.HTTP_201_CREATED, response_model=schemas.ShowUser, tags=['users'])
 def create_user(request: schemas.User, db: Session = Depends(get_db)):
-    
     new_user = models.User(name=request.name, email=request.email, password=Hash.bcrypt(request.password))
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
+
+
+@app.get('/user/{id}', response_model=schemas.ShowUser, tags=['users'])
+def fetchOneUser(id: int, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User Not Found!")
+    return user
