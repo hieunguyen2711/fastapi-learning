@@ -1,15 +1,18 @@
 from fastapi import FastAPI, Depends, status, Response, HTTPException
 from pydantic import BaseModel
 from . import schemas, models
-from .database import engine, SessionLocal
+from .database import engine, get_db
 from sqlalchemy.orm import Session
 from typing import List
 from .hashing import Hash
+from .routers import blog
 
 
 app = FastAPI()
 
 models.Base.metadata.create_all(bind=engine)
+
+app.include_router(blog.router)
 
 @app.get('/')
 def home():
@@ -23,12 +26,12 @@ class Blog(BaseModel):
     title: str
     body: str
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
 
  ####Create a POST Method to Insert a blog into the DB ######
 @app.post("/blog", status_code=status.HTTP_201_CREATED, tags=['blogs'])
@@ -60,11 +63,11 @@ def update(id, request: schemas.Blog, db: Session = Depends(get_db)):
     return "Successfully Updated"
 
 
-#### Create a GET Method to Fetch all blogs from the DB ###### 
-@app.get("/blog", response_model=List[schemas.ShowBlog], tags=['blogs'])
-def get_all_blog(db: Session = Depends(get_db)):
-    blogs = db.query(models.Blog).all()
-    return  blogs
+# #### Create a GET Method to Fetch all blogs from the DB ###### 
+# @app.get("/blog", response_model=List[schemas.ShowBlog], tags=['blogs'])
+# def get_all_blog(db: Session = Depends(get_db)):
+#     blogs = db.query(models.Blog).all()
+#     return  blogs
 
 ####Create a GET Method to Fetch one blog from the DB ######
 @app.get('/blog/{id}',status_code=200, response_model=schemas.ShowBlog, tags=['blogs'])
