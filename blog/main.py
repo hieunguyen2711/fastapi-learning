@@ -1,11 +1,8 @@
-from fastapi import FastAPI, Depends, status, Response, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
-from . import schemas, models
-from .database import engine, get_db
-from sqlalchemy.orm import Session
-from typing import List
-from .hashing import Hash
-from .routers import blog
+from . import models
+from .database import engine
+from .routers import blog, user, auth
 
 
 app = FastAPI()
@@ -13,14 +10,13 @@ app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
 
 app.include_router(blog.router)
-
+app.include_router(user.router)
+app.include_router(auth.router)
 @app.get('/')
 def home():
     return {"testing": "Hello"}
 
-"""
-    The code under is to perform the CRUD Operations for the Blogs.
-"""
+
 
 class Blog(BaseModel):
     title: str
@@ -28,23 +24,3 @@ class Blog(BaseModel):
 
 
 
-"""
-    The code under is to perform CRUD Operations for Users
-"""
-
-##### Create a POST method to create a new user.
-@app.post('/user', status_code=status.HTTP_201_CREATED, response_model=schemas.ShowUser, tags=['users'])
-def create_user(request: schemas.User, db: Session = Depends(get_db)):
-    new_user = models.User(name=request.name, email=request.email, password=Hash.bcrypt(request.password))
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
-
-
-@app.get('/user/{id}', response_model=schemas.ShowUser, tags=['users'])
-def fetchOneUser(id: int, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == id).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User Not Found!")
-    return user

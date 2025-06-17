@@ -5,3 +5,5 @@ uvicorn
 sqlalchemy
 passlib
 bcrypt
+python-jose
+pyjwt

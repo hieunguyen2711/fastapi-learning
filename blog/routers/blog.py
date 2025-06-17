@@ -1,49 +1,43 @@
-from fastapi import APIRouter, Depends, status, HTTPException, Response
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from .. import schemas, database, models
+from .. import schemas, database, oauth2
 from typing import List
+from ..repositories import blog
 
-router = APIRouter()
+router = APIRouter(
+        prefix="/blog",
+        tags=['blogs']
+    
+    )
+
+"""
+    The code under is to perform the CRUD Operations for the Blogs.
+"""
 
 #### Create a GET Method to Fetch all blogs from the DB ###### 
-@router.get("/blog", response_model=List[schemas.ShowBlog], tags=['blogs'])
-def get_all_blog(db: Session = Depends(database.get_db)):
-    blogs = db.query(models.Blog).all()
-    return  blogs
+@router.get("/", response_model=List[schemas.ShowBlog])
+def get_all_blog(db: Session = Depends(database.get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+    return blog.get_all(db)
+
+
 
  ####Create a POST Method to Insert a blog into the DB ######
-@router.post("/blog", status_code=status.HTTP_201_CREATED, tags=['blogs'])
-def create(request: schemas.Blog, db: Session = Depends(database.get_db)):
-    new_blog = models.Blog(title=request.title, body=request.body, user_id=1)
-    db.add(new_blog)
-    db.commit()
-    db.refresh(new_blog)
-    return new_blog
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def create(request: schemas.Blog, db: Session = Depends(database.get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+    return blog.create(request, db)
+
 
 ##### Delete a single Blog from the DB ######
-@router.delete('/blog/{id}', status_code=status.HTTP_204_NO_CONTENT,tags=['blogs'])
-def delete_single(id, db: Session = Depends(database.get_db)):
-    blog = db.query(models.Blog).filter(models.Blog.id == id)
-    if not blog.first():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ID Not Found!")
-    blog.delete(synchronize_session=False)
-    db.commit()
-    return 'Blog Deleted'
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_single(id, db: Session = Depends(database.get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+    return blog.delete(id, db)
 
 ####Create a GET Method to Fetch one blog from the DB ######
-@router.get('/blog/{id}',status_code=200, response_model=schemas.ShowBlog, tags=['blogs'])
-def fetch_one(id,response : Response, db: Session = Depends(database.get_db), status_code=200):
-    blog = db.query(models.Blog).filter(models.Blog.id == id).first()
-    if not blog:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ID Not Found!")
-    return blog
+@router.get('/{id}',status_code=200, response_model=schemas.ShowBlog)
+def fetch_one(id, db: Session = Depends(database.get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+    return blog.fetch_one(id, db)
 
 ##### Update the information of one blog #####
-@router.put('/blog/{id}', status_code=status.HTTP_202_ACCEPTED, tags=['blogs'])
-def update(id, request: schemas.Blog, db: Session = Depends(database.get_db)):
-    blog = db.query(models.Blog).filter(models.Blog.id == id)
-    if not blog.first():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Id not found")
-    blog.update(request.model_dump())
-    db.commit()
-    return "Successfully Updated"
+@router.put('/{id}', status_code=status.HTTP_202_ACCEPTED, tags=['blogs'])
+def update(id, request: schemas.Blog, db: Session = Depends(database.get_db), current_user: schemas.User = Depends(oauth2.get_current_user)):
+    return blog.update(id, request, db)
