@@ -1,9 +1,16 @@
 #A requirement text for all the used library.
 
+# FastAPI - Modern web framework for building APIs with Python
 fastapi
+# Uvicorn - ASGI server for running FastAPI applications
 uvicorn
+# SQLAlchemy - SQL toolkit and Object-Relational Mapping (ORM) library
 sqlalchemy
+# Passlib - Password hashing library for secure password storage
 passlib
+# Bcrypt - Password hashing algorithm used by passlib
 bcrypt
+# Python-Jose - JavaScript Object Signing and Encryption (JOSE) implementation
 python-jose
+# PyJWT - Python library for encoding and decoding JSON Web Tokens (JWT)
 pyjwt
